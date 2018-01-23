@@ -48,7 +48,7 @@ func CoverOnly(flags ...string) error {
 	}
 	defer func() { _ = coverAll.Close() }()
 
-	if _, err = coverAll.WriteString("mode: count\n"); err != nil {
+	if _, err = coverAll.WriteString("mode: atomic\n"); err != nil {
 		return err
 	}
 
@@ -61,6 +61,10 @@ func CoverOnly(flags ...string) error {
 		}
 
 		if err = appendCoverage(coverAll, ".coverage.out"); err != nil {
+			return err
+		}
+
+		if err = os.Remove(".coverage.out"); err != nil {
 			return err
 		}
 	}

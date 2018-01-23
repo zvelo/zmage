@@ -115,7 +115,12 @@ func Vendor() error {
 	if err := sh.Run("dep", "ensure"); err != nil {
 		return err
 	}
-	return sh.Run("dep", "prune")
+
+	if err := sh.Run("dep", "prune"); err != nil {
+		return err
+	}
+
+	return sh.Run("mage", "-f", "-v")
 }
 
 func Clean(files ...string) error {
