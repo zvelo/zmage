@@ -23,6 +23,10 @@ func appendCoverage(w io.Writer, fileName string) error {
 
 	// skip the first "mode:" line in the file
 	if _, err = r.ReadString('\n'); err != nil {
+		if err == io.EOF {
+			return nil
+		}
+
 		return err
 	}
 
@@ -64,7 +68,7 @@ func CoverOnly(flags ...string) error {
 			return err
 		}
 
-		if err = os.Remove(".coverage.out"); err != nil && !os.IsExist(err) {
+		if err = os.Remove(".coverage.out"); err != nil && !os.IsNotExist(err) {
 			return err
 		}
 	}
