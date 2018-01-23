@@ -120,7 +120,8 @@ func Vendor() error {
 		return err
 	}
 
-	return sh.Run("mage", "-f", "-l")
+	_, err := sh.Exec(nil, nil, os.Stderr, "mage", "-f", "-l")
+	return err
 }
 
 func Clean(files ...string) error {
