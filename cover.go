@@ -64,7 +64,7 @@ func CoverOnly(flags ...string) error {
 			return err
 		}
 
-		if err = os.Remove(".coverage.out"); err != nil {
+		if err = os.Remove(".coverage.out"); err != nil && !os.IsExist(err) {
 			return err
 		}
 	}
