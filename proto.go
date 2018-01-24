@@ -107,7 +107,12 @@ func protoBuild(exts []string, useFileFn func(string) (bool, error), cmd string,
 		return nil, err
 	}
 
-	gwPkg, err := build.Import("github.com/grpc-ecosystem/grpc-gateway/runtime", ".", 0)
+	pwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	gwPkg, err := build.Import("github.com/grpc-ecosystem/grpc-gateway/runtime", pwd, 0)
 	if err != nil {
 		return nil, err
 	}
