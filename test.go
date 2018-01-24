@@ -8,8 +8,8 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
-func Test(ctx context.Context, flags ...string) error {
-	mg.CtxDeps(ctx, Vet)
+func GoTest(ctx context.Context, flags ...string) error {
+	mg.CtxDeps(ctx, GoVet)
 
 	flags = append(flags, "-race")
 

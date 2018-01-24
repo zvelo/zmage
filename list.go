@@ -8,21 +8,21 @@ import (
 	"sync"
 )
 
-var listData = struct {
+var goPackageData = struct {
 	data []*build.Package
 	err  error
 	once sync.Once
 }{}
 
-func List(ctx build.Context) ([]*build.Package, error) {
-	listData.once.Do(func() {
+func GoPackages(ctx build.Context) ([]*build.Package, error) {
+	goPackageData.once.Do(func() {
 		pwd, err := os.Getwd()
 		if err != nil {
-			listData.err = err
+			goPackageData.err = err
 			return
 		}
 
-		listData.err = filepath.Walk(pwd, func(path string, info os.FileInfo, err error) error {
+		goPackageData.err = filepath.Walk(pwd, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -33,7 +33,7 @@ func List(ctx build.Context) ([]*build.Package, error) {
 
 			base := filepath.Base(path)
 
-			if base == "vendor" {
+			if base == vendor {
 				return filepath.SkipDir
 			}
 
@@ -59,11 +59,11 @@ func List(ctx build.Context) ([]*build.Package, error) {
 				return err
 			}
 
-			listData.data = append(listData.data, pkg)
+			goPackageData.data = append(goPackageData.data, pkg)
 
 			return nil
 		})
 	})
 
-	return listData.data, listData.err
+	return goPackageData.data, goPackageData.err
 }

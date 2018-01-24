@@ -2,9 +2,11 @@ package zmage
 
 import (
 	"bufio"
+	"fmt"
 	"go/build"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/magefile/mage/sh"
 )
@@ -19,19 +21,31 @@ func appendCoverage(w io.Writer, fileName string) error {
 	}
 	defer func() { _ = c.Close() }()
 
-	r := bufio.NewReader(c)
+	scanner := bufio.NewScanner(c)
 
-	// skip the first "mode:" line in the file
-	if _, err = r.ReadString('\n'); err != nil {
-		if err == io.EOF {
-			return nil
+	for scanner.Scan() {
+		text := scanner.Text()
+
+		if strings.HasPrefix(text, "mode:") {
+			continue
 		}
 
-		return err
+		if i := strings.Index(text, ":"); i >= 0 {
+			file := text[:i]
+
+			if strings.HasSuffix(file, ".pb.gw.go") {
+				continue
+			}
+
+			if strings.HasSuffix(file, ".pb.go") {
+				continue
+			}
+		}
+
+		fmt.Fprintln(w, text)
 	}
 
-	_, err = io.Copy(w, r)
-	return err
+	return scanner.Err()
 }
 
 func CoverOnly(flags ...string) error {
@@ -41,7 +55,7 @@ func CoverOnly(flags ...string) error {
 		return err
 	}
 
-	pkgs, err := List(build.Default)
+	pkgs, err := GoPackages(build.Default)
 	if err != nil {
 		return err
 	}

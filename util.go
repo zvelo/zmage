@@ -3,6 +3,7 @@ package zmage
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"sync"
 	"time"
 
@@ -13,11 +14,19 @@ import (
 var (
 	goexe  = "go"
 	gotest = "go test"
+	protoc = "protoc"
+	python = "python"
 	docker = sh.RunCmd("docker")
 	env    = map[string]string{"GODEBUG": "cgocheck=2"}
 )
 
+const vendor = "vendor"
+
 func init() {
+	if _, err := exec.LookPath("python3"); err == nil {
+		python = "python3"
+	}
+
 	if exe := os.Getenv("GOEXE"); exe != "" {
 		goexe = exe
 		gotest = goexe + " test"
@@ -25,6 +34,14 @@ func init() {
 
 	if exe := os.Getenv("GOTEST"); exe != "" {
 		gotest = exe
+	}
+
+	if exe := os.Getenv("PROTOC"); exe != "" {
+		protoc = exe
+	}
+
+	if exe := os.Getenv("PYTHON"); exe != "" {
+		python = exe
 	}
 }
 
@@ -94,12 +111,12 @@ func installTestDeps(flags ...string) error {
 	return sh.RunWith(env, goexe, args...)
 }
 
-func Vet() error {
+func GoVet() error {
 	return sh.RunWith(env, goexe, "vet", "./...")
 }
 
-func Modified(file string, files ...string) (bool, error) {
-	modified, err := target.Path(file, files...)
+func Modified(dst string, sources ...string) (bool, error) {
+	modified, err := target.Path(dst, sources...)
 	if os.IsNotExist(err) {
 		return true, nil
 	}
@@ -122,20 +139,4 @@ func Vendor() error {
 
 	_, err := sh.Exec(nil, nil, os.Stderr, "mage", "-f", "-l")
 	return err
-}
-
-func Clean(files ...string) error {
-	files = append(files,
-		"./.image-stamp",
-		"./.coverage.out",
-		"./.coverage-all.out",
-	)
-
-	for _, file := range files {
-		if err := os.RemoveAll(file); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

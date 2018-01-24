@@ -1,6 +1,7 @@
 package zmage
 
 import (
+	"fmt"
 	"go/build"
 	"os"
 	"path/filepath"
@@ -9,18 +10,22 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
-func installFile(ctx build.Context, dir string) (string, error) {
+func installedExeFile(ctx build.Context, dir string) string {
 	pwd, err := os.Getwd()
 	if err != nil {
-		return "", err
+		panic(err)
 	}
 
 	pkg, err := ctx.Import(dir, pwd, 0)
 	if err != nil {
-		return "", err
+		panic(err)
 	}
 
-	return filepath.Join(pkg.BinDir, filepath.Base(dir)), nil
+	if pkg.Name != "main" {
+		panic(fmt.Errorf(`%q is not a "main" package`, dir))
+	}
+
+	return filepath.Join(pkg.BinDir, filepath.Base(dir))
 }
 
 func ctxToEnv(ctx build.Context) map[string]string {
@@ -131,23 +136,32 @@ func shouldBuild(ctx build.Context, dir, file string) (bool, error) {
 	return modified, nil
 }
 
-func Build(ctx build.Context, pkg, target string, args ...string) error {
-	ok, err := shouldBuild(ctx, pkg, target)
+func BuildExe(ctx build.Context, pkg, exe string, args ...string) error {
+	ok, err := shouldBuild(ctx, pkg, exe)
 	if !ok || err != nil {
 		return err
 	}
 
-	args = append(args, "-o", target, pkg)
+	args = append(args, "-o", exe, pkg)
 	return goBuild(ctx, args...)
 }
 
-func Install(ctx build.Context, pkg string, args ...string) error {
-	file, err := installFile(ctx, pkg)
+func Install(ctx build.Context, args ...string) error {
+	ld, err := ldFlags()
 	if err != nil {
 		return err
 	}
 
-	ok, err := shouldBuild(ctx, file, pkg)
+	args = append([]string{"install", "-v", "-ldflags", ld}, args...)
+	args = append(args, "./...")
+
+	return sh.RunWith(ctxToEnv(ctx), goexe, args...)
+}
+
+func InstallExe(ctx build.Context, pkg string, args ...string) error {
+	exe := installedExeFile(ctx, pkg)
+
+	ok, err := shouldBuild(ctx, pkg, exe)
 	if !ok || err != nil {
 		return err
 	}

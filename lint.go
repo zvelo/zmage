@@ -4,22 +4,33 @@ import (
 	"context"
 	"go/build"
 	"os"
+	"path/filepath"
 
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
 
-func Lint(ctx context.Context) error {
-	mg.CtxDeps(ctx, Vet)
+func GoLint(ctx context.Context) error {
+	mg.CtxDeps(ctx, GoVet)
 
-	pkgs, err := List(build.Default)
+	pkgs, err := GoPackages(build.Default)
+	if err != nil {
+		return err
+	}
+
+	pwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
 	var pkgNames []string
 	for _, pkg := range pkgs {
-		pkgNames = append(pkgNames, pkg.ImportPath)
+		dir, err := filepath.Rel(pwd, pkg.Dir)
+		if err != nil {
+			return err
+		}
+
+		pkgNames = append(pkgNames, dir)
 	}
 
 	_, err = sh.Exec(nil, os.Stderr, nil, "golint", pkgNames...)
