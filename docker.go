@@ -22,8 +22,8 @@ func PushImage(image string) error {
 	}
 
 	if b == "master" {
-		v, err := version()
-		if err != nil {
+		var v string
+		if v, err = version(); err != nil {
 			return err
 		}
 

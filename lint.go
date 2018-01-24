@@ -25,8 +25,8 @@ func GoLint(ctx context.Context) error {
 
 	var pkgNames []string
 	for _, pkg := range pkgs {
-		dir, err := filepath.Rel(pwd, pkg.Dir)
-		if err != nil {
+		var dir string
+		if dir, err = filepath.Rel(pwd, pkg.Dir); err != nil {
 			return err
 		}
 

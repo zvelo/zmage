@@ -112,8 +112,8 @@ func shouldBuild(ctx build.Context, dir, file string) (bool, error) {
 	}
 
 	if !filepath.IsAbs(file) {
-		pwd, err := os.Getwd()
-		if err != nil {
+		var pwd string
+		if pwd, err = os.Getwd(); err != nil {
 			return false, err
 		}
 

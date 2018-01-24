@@ -68,7 +68,7 @@ func protoFiles() (map[string][]string, error) {
 
 var protoBuildLock sync.Mutex
 
-func protoBuildOne(cmd, gwPkgDir string, files, args []string) error {
+func protoBuildOne(preFn func() error, cmd, gwPkgDir string, files, args []string) error {
 	protoBuildLock.Lock()
 	defer protoBuildLock.Unlock()
 
@@ -94,6 +94,12 @@ func protoBuildOne(cmd, gwPkgDir string, files, args []string) error {
 		args = append(args, filepath.Join("zvelo", filepath.Base(pwd), file))
 	}
 
+	if preFn != nil {
+		if err = preFn(); err != nil {
+			return err
+		}
+	}
+
 	if err = sh.Run(cmd, args...); err != nil {
 		return err
 	}
@@ -101,7 +107,7 @@ func protoBuildOne(cmd, gwPkgDir string, files, args []string) error {
 	return os.RemoveAll("../../zvelo")
 }
 
-func protoBuild(exts []string, useFileFn func(string) (bool, error), cmd string, args ...string) ([]string, error) {
+func protoBuild(exts []string, useFileFn func(string) (bool, error), preFn func() error, cmd string, args ...string) ([]string, error) {
 	dirFiles, err := protoFiles()
 	if err != nil {
 		return nil, err
@@ -126,8 +132,8 @@ func protoBuild(exts []string, useFileFn func(string) (bool, error), cmd string,
 			newFiles = nil
 
 			for _, file := range files {
-				use, err := useFileFn(file)
-				if err != nil {
+				var use bool
+				if use, err = useFileFn(file); err != nil {
 					return nil, err
 				}
 
@@ -141,10 +147,12 @@ func protoBuild(exts []string, useFileFn func(string) (bool, error), cmd string,
 		for _, file := range newFiles {
 			for _, ext := range exts {
 				pbFile := strings.Replace(file, ".proto", ext, -1)
-				fileModified, err := Modified(pbFile, file)
-				if err != nil {
+
+				var fileModified bool
+				if fileModified, err = Modified(pbFile, file); err != nil {
 					return nil, err
 				}
+
 				if fileModified {
 					modified = true
 					break
@@ -156,7 +164,7 @@ func protoBuild(exts []string, useFileFn func(string) (bool, error), cmd string,
 			continue
 		}
 
-		if err = protoBuildOne(cmd, gwPkg.Dir, newFiles, args); err != nil {
+		if err = protoBuildOne(preFn, cmd, gwPkg.Dir, newFiles, args); err != nil {
 			return nil, err
 		}
 
@@ -166,12 +174,17 @@ func protoBuild(exts []string, useFileFn func(string) (bool, error), cmd string,
 	return updatedFiles, nil
 }
 
-func ProtoGo() ([]string, error) {
-	if err := InstallExe(build.Default, "zvelo.io/msg/cmd/protoc-gen-gozvelo"); err != nil {
-		return nil, err
-	}
+var gogoZvelo onceData
 
-	return protoBuild([]string{".pb.go"}, nil, protoc, "--gozvelo_out=Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,plugins=grpc:../..")
+func installGogoZvelo() error {
+	gogoZvelo.once.Do(func() {
+		gogoZvelo.err = InstallExe(build.Default, "zvelo.io/msg/cmd/protoc-gen-gozvelo")
+	})
+	return gogoZvelo.err
+}
+
+func ProtoGo() ([]string, error) {
+	return protoBuild([]string{".pb.go"}, nil, installGogoZvelo, protoc, "--gozvelo_out=Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,plugins=grpc:../..")
 }
 
 var serviceRe = regexp.MustCompile(`^\s*option\s+\(google\.api\.http\)\s+=\s+{$`)
@@ -194,15 +207,15 @@ func protoUsesGRPCGateway(file string) (bool, error) {
 }
 
 func ProtoGRPCGateway() ([]string, error) {
-	return protoBuild([]string{".pb.gw.go"}, protoUsesGRPCGateway, protoc, "--grpc-gateway_out=logtostderr=true,request_context=true:../..")
+	return protoBuild([]string{".pb.gw.go"}, protoUsesGRPCGateway, nil, protoc, "--grpc-gateway_out=logtostderr=true,request_context=true:../..")
 }
 
 func ProtoSwagger() ([]string, error) {
-	return protoBuild([]string{".swagger.json"}, protoUsesGRPCGateway, protoc, "--swagger_out=logtostderr=true:../..")
+	return protoBuild([]string{".swagger.json"}, protoUsesGRPCGateway, nil, protoc, "--swagger_out=logtostderr=true:../..")
 }
 
 func ProtoPython() ([]string, error) {
-	return protoBuild([]string{"_pb2.py", "_pb2_grpc.py"}, nil, python,
+	return protoBuild([]string{"_pb2.py", "_pb2_grpc.py"}, nil, nil, python,
 		"-m", "grpc_tools.protoc",
 		"--python_out=../..",
 		"--grpc_python_out=../..",

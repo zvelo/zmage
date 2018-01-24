@@ -19,7 +19,7 @@ func appendCoverage(w io.Writer, fileName string) error {
 		}
 		return err
 	}
-	defer func() { _ = c.Close() }()
+	defer func() { _ = c.Close() }() // #nosec
 
 	scanner := bufio.NewScanner(c)
 
@@ -42,7 +42,7 @@ func appendCoverage(w io.Writer, fileName string) error {
 			}
 		}
 
-		fmt.Fprintln(w, text)
+		_, _ = fmt.Fprintln(w, text) // #nosec
 	}
 
 	return scanner.Err()
@@ -60,7 +60,7 @@ func CoverOnly(flags ...string) error {
 		return err
 	}
 
-	coverAll, err := os.OpenFile(".coverage-all.out", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	coverAll, err := os.OpenFile(".coverage-all.out", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}
