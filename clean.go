@@ -7,7 +7,6 @@ import (
 
 func Clean(files ...string) error {
 	files = append(files,
-		"./.image-stamp",
 		"./.coverage.out",
 		"./.coverage-all.out",
 	)
