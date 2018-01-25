@@ -2,17 +2,8 @@ package zmage
 
 import "time"
 
-func BuildImage(image, dockerFile string) error {
-	modified, err := Modified("./.image-stamp", dockerFile)
-	if !modified || err != nil {
-		return err
-	}
-
-	if err = docker("build", "-t", image, "-f", dockerFile, "."); err != nil {
-		return err
-	}
-
-	return Touch("./.image-stamp")
+func BuildImage(image, dockerFile, ctxDir string) error {
+	return docker("build", "-t", image, "-f", dockerFile, ctxDir)
 }
 
 func PushImage(image string) error {
