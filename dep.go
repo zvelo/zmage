@@ -20,9 +20,5 @@ func Dep(ctx context.Context) error {
 		return err
 	}
 
-	if err = sh.Run("dep", "prune"); err != nil {
-		return err
-	}
-
 	return Touch("./Gopkg.lock")
 }

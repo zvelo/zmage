@@ -127,16 +127,3 @@ func Modified(dst string, sources ...string) (bool, error) {
 func Touch(file string) error {
 	return sh.Run("touch", file)
 }
-
-func Vendor() error {
-	if err := sh.Run("dep", "ensure"); err != nil {
-		return err
-	}
-
-	if err := sh.Run("dep", "prune"); err != nil {
-		return err
-	}
-
-	_, err := sh.Exec(nil, nil, os.Stderr, "mage", "-f", "-l")
-	return err
-}
