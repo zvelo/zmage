@@ -72,6 +72,11 @@ var versionData onceData
 
 func version() (string, error) {
 	versionData.once.Do(func() {
+		if v := os.Getenv("VERSION"); v != "" {
+			versionData.data = v
+			return
+		}
+
 		versionData.data, versionData.err = sh.Output("git", "describe", "--tags", "--always", "--dirty=-dev")
 	})
 	return versionData.data, versionData.err
@@ -81,6 +86,11 @@ var commitHashData onceData
 
 func commitHash() (string, error) {
 	commitHashData.once.Do(func() {
+		if v := os.Getenv("GIT_COMMIT"); v != "" {
+			commitHashData.data = v
+			return
+		}
+
 		commitHashData.data, commitHashData.err = sh.Output("git", "rev-parse", "--short", "HEAD")
 	})
 	return commitHashData.data, commitHashData.err
@@ -90,6 +100,11 @@ var buildDateData onceData
 
 func buildDate() string {
 	buildDateData.once.Do(func() {
+		if v := os.Getenv("BUILD_DATE"); v != "" {
+			buildDateData.data = v
+			return
+		}
+
 		buildDateData.data = time.Now().Format("2006-01-02T15:14:05Z")
 	})
 	return buildDateData.data
