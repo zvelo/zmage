@@ -36,7 +36,6 @@ func buildArgs() ([]string, error) {
 	return []string{
 		"--build-arg", "VERSION=" + v,
 		"--build-arg", "GIT_COMMIT=" + hash,
-		"--build-arg", "BUILD_DATE=" + buildDate(),
 	}, nil
 }
 

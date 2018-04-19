@@ -100,11 +100,6 @@ var buildDateData onceData
 
 func buildDate() string {
 	buildDateData.once.Do(func() {
-		if v := os.Getenv("BUILD_DATE"); v != "" {
-			buildDateData.data = v
-			return
-		}
-
 		buildDateData.data = time.Now().Format("2006-01-02T15:14:05Z")
 	})
 	return buildDateData.data
