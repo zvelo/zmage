@@ -184,7 +184,14 @@ func installGogoZvelo() error {
 }
 
 func ProtoGo() ([]string, error) {
-	return protoBuild([]string{".pb.go"}, nil, installGogoZvelo, protoc, "--gozvelo_out=Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,plugins=grpc:../..")
+	return protoBuild([]string{".pb.go"}, nil, installGogoZvelo, protoc, "--gozvelo_out="+
+		"Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,"+
+		"Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,"+
+		"Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,"+
+		"Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,"+
+		"Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,"+
+		"plugins=grpc:../..",
+	)
 }
 
 var serviceRe = regexp.MustCompile(`^\s*option\s+\(google\.api\.http\)\s+=\s+{$`)
