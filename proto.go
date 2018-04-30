@@ -229,16 +229,54 @@ func ProtoPython() ([]string, error) {
 	)
 }
 
-func protoUsesFile(name string) func(string) (bool, error) {
+func protoUsesFiles(names ...string) func(string) (bool, error) {
 	return func(file string) (bool, error) {
-		return name == file, nil
+		for _, name := range names {
+			if name == file {
+				return true, nil
+			}
+		}
+		return false, nil
 	}
 }
 
-func Protoset(name string) ([]string, error) {
-	ext := ".protoset"
-	return protoBuild([]string{ext}, protoUsesFile(name), nil, protoc,
-		"--descriptor_set_out="+strings.Replace(name, ".proto", ext, -1),
+func Descriptor(out string, files ...string) ([]string, error) {
+	ext := filepath.Ext(out)
+
+	dirFiles, err := protoFiles()
+	if err != nil {
+		return nil, err
+	}
+
+	var localFiles []string
+	for _, dfs := range dirFiles {
+		for _, df := range dfs {
+			for _, f := range files {
+				if f == df {
+					localFiles = append(localFiles, f)
+				}
+			}
+		}
+	}
+
+	args := []string{
+		"--descriptor_set_out=" + out,
 		"--include_imports",
-	)
+	}
+
+	for _, f := range files {
+		var local bool
+		for _, lf := range localFiles {
+			if f == lf {
+				local = true
+				continue
+			}
+		}
+
+		if !local {
+			args = append(args, f)
+		}
+	}
+
+	return protoBuild([]string{ext}, protoUsesFiles(localFiles...), nil, protoc, args...)
 }
