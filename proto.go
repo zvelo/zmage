@@ -248,15 +248,30 @@ func Descriptor(out string, files ...string) ([]string, error) {
 		return nil, err
 	}
 
+	var modified bool
+
 	var localFiles []string
 	for _, dfs := range dirFiles {
 		for _, df := range dfs {
 			for _, f := range files {
 				if f == df {
+					m, err := Modified(out, f)
+					if err != nil {
+						return nil, err
+					}
+
+					if m {
+						modified = true
+					}
+
 					localFiles = append(localFiles, f)
 				}
 			}
 		}
+	}
+
+	if !modified {
+		return nil, nil
 	}
 
 	args := []string{
