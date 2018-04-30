@@ -80,10 +80,13 @@ func protoBuildOne(preFn func() error, cmd, gwPkgDir string, files, args []strin
 		return err
 	}
 
-	args = append(args,
-		"-I../..",
-		"-I"+filepath.Join(gwPkgDir, "../third_party/googleapis"),
-	)
+	args = append(args, "-I../..")
+
+	if gwPkgDir != "" {
+		args = append(args,
+			"-I"+filepath.Join(gwPkgDir, "../third_party/googleapis"),
+		)
+	}
 
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -241,9 +244,17 @@ func protoUsesFiles(names ...string) func(string) (bool, error) {
 }
 
 func Descriptor(out string, files ...string) ([]string, error) {
-	ext := filepath.Ext(out)
-
 	dirFiles, err := protoFiles()
+	if err != nil {
+		return nil, err
+	}
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	gwPkg, err := build.Import("github.com/grpc-ecosystem/grpc-gateway/runtime", pwd, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -255,8 +266,8 @@ func Descriptor(out string, files ...string) ([]string, error) {
 		for _, df := range dfs {
 			for _, f := range files {
 				if f == df {
-					m, err := Modified(out, f)
-					if err != nil {
+					var m bool
+					if m, err = Modified(out, f); err != nil {
 						return nil, err
 					}
 
@@ -293,5 +304,9 @@ func Descriptor(out string, files ...string) ([]string, error) {
 		}
 	}
 
-	return protoBuild([]string{ext}, protoUsesFiles(localFiles...), nil, protoc, args...)
+	if err = protoBuildOne(nil, protoc, gwPkg.Dir, localFiles, args); err != nil {
+		return nil, err
+	}
+
+	return []string{out}, nil
 }
