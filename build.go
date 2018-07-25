@@ -94,7 +94,7 @@ func buildSources(ctx build.Context, dir string) ([]string, error) {
 
 			t, err := ctx.Import(i, pwd, 0)
 			if err != nil {
-				return nil, err
+				continue
 			}
 
 			cache[i] = t

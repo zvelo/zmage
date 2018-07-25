@@ -1,4 +1,4 @@
-module zvelo.io/zmage/v4
+module zvelo.io/zmage
 
 require (
 	github.com/magefile/mage v0.0.0-20180411170307-771ebed3d686
