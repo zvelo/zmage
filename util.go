@@ -112,6 +112,7 @@ func branch() (string, error) {
 	branchData.once.Do(func() {
 		s, err := sh.Output("git", "symbolic-ref", "--short", "-q", "HEAD")
 		s = strings.ReplaceAll(s, "-", "_")
+		s = strings.ReplaceAll(s, "/", "_")
 		branchData.data, branchData.err = s, err
 	})
 	return branchData.data, branchData.err
