@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -109,7 +110,9 @@ var branchData onceData
 
 func branch() (string, error) {
 	branchData.once.Do(func() {
-		branchData.data, branchData.err = sh.Output("git", "symbolic-ref", "--short", "-q", "HEAD")
+		s, err := sh.Output("git", "symbolic-ref", "--short", "-q", "HEAD")
+		s = strings.ReplaceAll(s, "-", "_")
+		branchData.data, branchData.err = s, err
 	})
 	return branchData.data, branchData.err
 }
